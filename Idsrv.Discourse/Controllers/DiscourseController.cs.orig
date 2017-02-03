@@ -41,7 +41,13 @@ namespace Idsrv.Discourse.Controllers
 
             if (user == null)
             {
+<<<<<<< HEAD
                 throw new UserNotFoundException($"Could not get user with username '{res.Name}' from db");
+=======
+                var user = Users.Get().First(u => u.Username == res.Name.ToString());
+                var discourseResponse = CreateCustomDiscourseResponse(user);
+                return new RedirectResult("https://localhost:44319/identity/discourse/mock?alreadyauth=1&payload=" + discourseResponse);
+>>>>>>> b76d59c42238e11ba86dbfd5edd80d1a4da94eb5
             }
 
             var redirectUrl = CreateDiscourseRedirectUrl(user, payload);
@@ -64,8 +70,19 @@ namespace Idsrv.Discourse.Controllers
                 var authLogin = new AuthenticatedLogin
                 {
                     AuthenticationMethod = "password",
+<<<<<<< HEAD
                     Name = user.Email,
                     Subject = user.Email,
+=======
+                    Name = username,
+                    Claims = new List<Claim>
+                    {
+                        new Claim(Constants.ClaimTypes.PreferredUserName, username),
+                        new Claim(Constants.ClaimTypes.GivenName, user.Claims.First(c => c.Type == Constants.ClaimTypes.GivenName).Value),
+                        new Claim(Constants.ClaimTypes.FamilyName, user.Claims.First(c => c.Type == Constants.ClaimTypes.FamilyName).Value)
+                    },
+                    Subject = user.Subject,
+>>>>>>> b76d59c42238e11ba86dbfd5edd80d1a4da94eb5
                     PersistentLogin = true
                 };
 

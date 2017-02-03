@@ -24,11 +24,6 @@ namespace Idsrv.Discourse.Controllers
         [HttpGet]
         public async Task<ActionResult> Index(string sso, string sig)
         {
-            if (string.IsNullOrEmpty(sso) || string.IsNullOrEmpty(sig))
-            {
-                throw new ArgumentException("Missing input parameters");
-            }
-
             if (!IsValid(sso, sig))
             {
                 throw new SecurityException("sso sig not valid");
@@ -40,9 +35,7 @@ namespace Idsrv.Discourse.Controllers
             if (isAuthenticated)
             {
                 // User authenticated, getting user, generating sso and redirecting back to Discourse
-
                 var user = Users.GetUserBySub(idsrvClaimsIdentity.FindFirst(c => c.Type == "sub").Value);
-
                 var redirectUrl = CreateDiscourseRedirectUrl(user, sso);
                 return new RedirectResult(redirectUrl);
             }

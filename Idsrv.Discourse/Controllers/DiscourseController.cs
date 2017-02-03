@@ -32,9 +32,10 @@ namespace Idsrv.Discourse.Controllers
                 throw new SecurityException("sso sig not valid");
             }
 
-            var res = Request.GetOwinContext().Environment.GetIdentityServerFullLoginAsync().GetAwaiter().GetResult();
+            var idsrvClaimsIdentity = Request.GetOwinContext().Environment.GetIdentityServerFullLoginAsync().GetAwaiter().GetResult();
 
-            if (res == null || !res.Claims.Any())
+            var isNotAuthenticated = idsrvClaimsIdentity == null || !idsrvClaimsIdentity.Claims.Any();
+            if (isNotAuthenticated)
             {
                 // Not authenticated, returning login page
                 TempData["sso"] = sso;
@@ -42,7 +43,7 @@ namespace Idsrv.Discourse.Controllers
             }
 
             // User authenticated, getting user, generating sso and redirecting back to Discourse
-            var user = Users.GetUserBySub(res.FindFirst(c => c.Type == "sub").Value);
+            var user = Users.GetUserBySub(idsrvClaimsIdentity.FindFirst(c => c.Type == "sub").Value);
 
             var redirectUrl = CreateDiscourseRedirectUrl(user, sso);
             return new RedirectResult(redirectUrl);

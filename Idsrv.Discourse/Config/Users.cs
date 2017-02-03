@@ -38,7 +38,17 @@ namespace Idsrv.Discourse.Config
 
         public static bool PasswordMatch(string username, string password)
         {
-            return GetUser(username).Password.Equals(password);
+            var user = GetUser(username);
+            if (user != null)
+            {
+                return user.Password.Equals(password);
+            }
+            return false;
+        }
+
+        public static InMemoryUser GetUserBySub(string sub)
+        {
+            return Get().First(u => u.Subject == sub);
         }
     }
 

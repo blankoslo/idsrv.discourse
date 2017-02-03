@@ -42,7 +42,7 @@ namespace Idsrv.Discourse.Controllers
             }
 
             // User authenticated, getting user, generating sso and redirecting back to Discourse
-            var user = Users.GetUser(res.Name);
+            var user = Users.GetUserBySub(res.FindFirst(c => c.Type == "sub").Value);
 
             var redirectUrl = CreateDiscourseRedirectUrl(user, sso);
             return new RedirectResult(redirectUrl);
@@ -89,10 +89,10 @@ namespace Idsrv.Discourse.Controllers
             Request.GetOwinContext().Authentication.SignOut();
         }
 
-        [Route("core/discourse/init")]
+        [Route("core/discourse/fakeincomingrequest")]
         public ActionResult Init()
         {
-            var mockRequest = GenerateIncomingRequest();
+            var mockRequest = Mocks.GenerateFakeDiscoursceIncomingRequest();
             return RedirectToAction("Index", new { sso = mockRequest.Sso, sig = mockRequest.Sig});
         }
 
@@ -139,32 +139,7 @@ namespace Idsrv.Discourse.Controllers
 
         private static string CreatessoQueryString(Dictionary<string, string> dictionary)
         {
-
             return string.Join("&", dictionary.Select(x => $"{x.Key}={x.Value}"));
-        }
-
-        private static IncomingDiscourseRequestMock GenerateIncomingRequest()
-        {
-            var ssoDictionary = new Dictionary<string, string>
-            {
-                {"nonce", "something"},
-                {"email", HttpUtility.UrlEncode("bob@bob.com")},
-                {"external_id", HttpUtility.UrlEncode("88421113")},
-                {"username", HttpUtility.UrlEncode("bob")},
-                {"name", HttpUtility.UrlEncode("Bob Smith")}
-            };
-
-            var returnsso = CreatessoQueryString(ssoDictionary);
-
-            var returnssoEncoded = Convert.ToBase64String(Encoding.UTF8.GetBytes(returnsso));
-            var returnSig = Hash(DISCOURSE_SECRET, returnssoEncoded);
-            return new IncomingDiscourseRequestMock {Sso = returnssoEncoded, Sig = returnSig};
-        }
-
-        class IncomingDiscourseRequestMock
-        {
-            public string Sso;
-            public string Sig;
         }
     }
 }

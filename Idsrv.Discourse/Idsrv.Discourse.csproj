@@ -140,6 +140,7 @@
     <Compile Include="App_Start\BundleConfig.cs" />
     <Compile Include="App_Start\FilterConfig.cs" />
     <Compile Include="App_Start\RouteConfig.cs" />
+    <Compile Include="Config\Mocks.cs" />
     <Compile Include="Config\Scopes.cs" />
     <Compile Include="Controllers\DiscourseController.cs" />
     <Compile Include="Controllers\HomeController.cs" />

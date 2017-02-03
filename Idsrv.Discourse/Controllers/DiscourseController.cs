@@ -83,13 +83,20 @@ namespace Idsrv.Discourse.Controllers
             return View("Index");
         }
 
-        [Route("identity/discourse/logout")]
+        [Route("core/discourse/logout")]
         public void Logout()
         {
             Request.GetOwinContext().Authentication.SignOut();
         }
 
-        public static bool Validatesso(string encodedsso, string sig)
+        [Route("core/discourse/init")]
+        public ActionResult Init()
+        {
+            var mockRequest = GenerateIncomingRequest();
+            return RedirectToAction("Index", new { sso = mockRequest.Sso, sig = mockRequest.Sig});
+        }
+
+        private static bool Validatesso(string encodedsso, string sig)
         {
             return Hash(DISCOURSE_SECRET, encodedsso) == sig;
         }
@@ -134,6 +141,30 @@ namespace Idsrv.Discourse.Controllers
         {
 
             return string.Join("&", dictionary.Select(x => $"{x.Key}={x.Value}"));
+        }
+
+        private static IncomingDiscourseRequestMock GenerateIncomingRequest()
+        {
+            var ssoDictionary = new Dictionary<string, string>
+            {
+                {"nonce", "something"},
+                {"email", HttpUtility.UrlEncode("bob@bob.com")},
+                {"external_id", HttpUtility.UrlEncode("88421113")},
+                {"username", HttpUtility.UrlEncode("bob")},
+                {"name", HttpUtility.UrlEncode("Bob Smith")}
+            };
+
+            var returnsso = CreatessoQueryString(ssoDictionary);
+
+            var returnssoEncoded = Convert.ToBase64String(Encoding.UTF8.GetBytes(returnsso));
+            var returnSig = Hash(DISCOURSE_SECRET, returnssoEncoded);
+            return new IncomingDiscourseRequestMock {Sso = returnssoEncoded, Sig = returnSig};
+        }
+
+        class IncomingDiscourseRequestMock
+        {
+            public string Sso;
+            public string Sig;
         }
     }
 }

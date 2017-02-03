@@ -1,7 +1,28 @@
-﻿@model dynamic
+﻿
 
-@{
-    ViewBag.Title = "title";
+<div class="row">
+    <div class="col-md-12">
+        <h1>Discourse login</h1>
+        <p>Login when user is coming via discourse, and have never logged in before</p>
+        <form action="@Url.Action("Login")" method="post" class="form form-inline">
+            <input type="text" name="username" class="form-control" />
+            <input type="text" name="password" class="form-control" />
+            <input type="submit" class="btn btn-primary" />
+        </form>
+    </div>
+</div>
+
+
+@if (TempData["error"] != null)
+{
+    <hr/>
+    <div class="row">
+        <div class="col-md-12">
+            <div class="alert alert-danger">
+                <strong>Sry!</strong> @TempData["error"]
+            </div>
+        </div>
+    </div>
+
 }
 
-<h2>title</h2>

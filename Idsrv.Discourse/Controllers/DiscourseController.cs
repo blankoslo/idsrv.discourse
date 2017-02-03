@@ -65,11 +65,6 @@ namespace Idsrv.Discourse.Controllers
                 Request.GetOwinContext().Environment.IssueLoginCookie(authLogin);
 
                 var sso = TempData["sso"] as string;
-                if (sso == null)
-                {
-                    throw new Exception("Unable to retrieve Discourse sso from memory");
-                }
-
                 TempData["sso"] = null;
 
                 var redirectUrl = CreateDiscourseRedirectUrl(user, sso);

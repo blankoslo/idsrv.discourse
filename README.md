@@ -12,7 +12,7 @@ Discourse supports direct integration with Twitter, Yahoo, Google, but not a gen
 ### 1. How to setup Discourse for custom SSO:
 Go to your discourse instance as an admin at `/admin/site_settings/category/login`, and enable SSO:
 
-![/images/discourse_sso_setup.png](/images/discourse_sso_setup.png)
+![/images/discourse_sso_setup.PNG](/images/discourse_sso_setup.PNG)
 
 For more information, [see Discourse own docs](https://meta.discourse.org/t/official-single-sign-on-for-discourse/13045) about this.
 

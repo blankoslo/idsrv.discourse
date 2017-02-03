@@ -20,6 +20,7 @@ namespace Idsrv.Discourse.Controllers
         
         // Redirected from Discourse
         [Route("core/discourse")]
+        [HttpGet]
         public ActionResult Index(string sso, string sig)
         {
             if (string.IsNullOrEmpty(sso) || string.IsNullOrEmpty(sig))
@@ -85,12 +86,14 @@ namespace Idsrv.Discourse.Controllers
         }
 
         [Route("core/discourse/logout")]
+        [HttpGet]
         public void Logout()
         {
             Request.GetOwinContext().Authentication.SignOut();
         }
 
         [Route("core/discourse/fakeincomingrequest")]
+        [HttpGet]
         public ActionResult Init()
         {
             var mockRequest = Mocks.GenerateFakeDiscoursceIncomingRequest();
@@ -102,7 +105,7 @@ namespace Idsrv.Discourse.Controllers
             return Hash(DISCOURSE_SECRET, encodedsso) == sig;
         }
 
-        public static string CreateDiscourseRedirectUrl(InMemoryUser user, string originalEncodedsso)
+        private static string CreateDiscourseRedirectUrl(InMemoryUser user, string originalEncodedsso)
         {
             var urlParameters = Parsesso(originalEncodedsso);
             var nonce = urlParameters.Get("nonce");

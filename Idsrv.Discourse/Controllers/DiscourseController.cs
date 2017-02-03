@@ -1,9 +1,12 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
-using System.Security.Claims;
+using System.Security;
+using System.Security.Cryptography;
+using System.Text;
 using System.Web;
 using System.Web.Mvc;
-using IdentityServer3.Core;
 using IdentityServer3.Core.Extensions;
 using IdentityServer3.Core.Models;
 using IdentityServer3.Core.Services.InMemory;
@@ -13,18 +16,20 @@ namespace Idsrv.Discourse.Controllers
 {
     public class DiscourseController : Controller
     {
+        const string DISCOURSE_SECRET = "asd";
+        
         // Redirected from Discourse
         [Route("core/discourse")]
-        public ActionResult Index([Bind(Prefix = "sso")]string payload, [Bind(Prefix = "sig")]string signature)
+        public ActionResult Index(string sso, string sig)
         {
-            if (string.IsNullOrEmpty(payload) || string.IsNullOrEmpty(signature))
+            if (string.IsNullOrEmpty(sso) || string.IsNullOrEmpty(sig))
             {
                 throw new ArgumentException("Missing input parameters");
             }
 
-            if (!ValidatePayload(payload, signature))
+            if (!Validatesso(sso, sig))
             {
-                throw new SecurityException("Payload signature not valid");
+                throw new SecurityException("sso sig not valid");
             }
 
             var res = Request.GetOwinContext().Environment.GetIdentityServerFullLoginAsync().GetAwaiter().GetResult();
@@ -32,54 +37,45 @@ namespace Idsrv.Discourse.Controllers
             if (res == null || !res.Claims.Any())
             {
                 // Not authenticated, returning login page
-                TempData["payload"] = payload;
+                TempData["sso"] = sso;
                 return View();
             }
 
-            // User authenticated, getting user from db, generating payload and redirecting back to Discourse
-            var user = _userService.GetUser(res.Name);
+            // User authenticated, getting user, generating sso and redirecting back to Discourse
+            var user = Users.GetUser(res.Name);
 
-            if (user == null)
-            {
-                throw new UserNotFoundException($"Could not get user with username '{res.Name}' from db");
-            }
-
-            var redirectUrl = CreateDiscourseRedirectUrl(user, payload);
+            var redirectUrl = CreateDiscourseRedirectUrl(user, sso);
             return new RedirectResult(redirectUrl);
         }
 
         [Route("core/discourse/login")]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Login(Login login)
+        public ActionResult Login(string username, string password)
         {
-            if (_authenticationService.Authenticate(login.Email, login.Password))
+            if (Users.PasswordMatch(username, password))
             {
-                var user = _userService.GetUser(login.Email);
-                if (user == null)
-                {
-                    throw new UserNotFoundException($"Could not get user with username '{login.Email}' from db");
-                }
+                var user = Users.GetUser(username);
 
                 var authLogin = new AuthenticatedLogin
                 {
                     AuthenticationMethod = "password",
-                    Name = user.Email,
-                    Subject = user.Email,
+                    Name = user.GetClaim("name"),
+                    Subject = user.Subject,
                     PersistentLogin = true
                 };
 
                 Request.GetOwinContext().Environment.IssueLoginCookie(authLogin);
 
-                var payload = TempData["payload"] as string;
-                if (payload == null)
+                var sso = TempData["sso"] as string;
+                if (sso == null)
                 {
-                    throw new Exception("Unable to retrieve Discourse payload from memory");
+                    throw new Exception("Unable to retrieve Discourse sso from memory");
                 }
 
-                TempData["payload"] = null;
+                TempData["sso"] = null;
 
-                var redirectUrl = CreateDiscourseRedirectUrl(user, payload);
+                var redirectUrl = CreateDiscourseRedirectUrl(user, sso);
                 return new RedirectResult(redirectUrl);
             }
 
@@ -88,69 +84,53 @@ namespace Idsrv.Discourse.Controllers
         }
 
         [Route("identity/discourse/logout")]
-        public ActionResult Logout()
+        public void Logout()
         {
             Request.GetOwinContext().Authentication.SignOut();
-            return Redirect(AppSettings.DiscoursePostLogoutRedirectUri());
         }
 
-
-
-
-        public static bool ValidatePayload(string encodedPayload, string signature)
+        public static bool Validatesso(string encodedsso, string sig)
         {
-            return Hash(AppSettings.DiscourseSecret(), encodedPayload) == signature;
+            return Hash(DISCOURSE_SECRET, encodedsso) == sig;
         }
 
-        public static string CreateDiscourseRedirectUrl(User user, string originalEncodedPayload)
+        public static string CreateDiscourseRedirectUrl(InMemoryUser user, string originalEncodedsso)
         {
-            var urlParameters = ParsePayload(originalEncodedPayload);
+            var urlParameters = Parsesso(originalEncodedsso);
             var nonce = urlParameters.Get("nonce");
             var returnUrl = urlParameters.Get("return_sso_url");
             
-            var payloadDictionary = new Dictionary<string, string>
+            var ssoDictionary = new Dictionary<string, string>
             {
                 {"nonce", nonce},
-                {"email", HttpUtility.UrlEncode(user.Email)},
-                {"external_id", HttpUtility.UrlEncode(user.Id.ToString())},
-                {"username", HttpUtility.UrlEncode(user.Email)},
-                {"name", HttpUtility.UrlEncode(user.Name)},
-                {"avatar_url", HttpUtility.UrlEncode(user.ImageUrl)},
-                {"bio", HttpUtility.UrlEncode(user.Description)},
-                {"suppress_welcome_message", "true"}
+                {"email", HttpUtility.UrlEncode(user.GetClaim("email"))},
+                {"external_id", HttpUtility.UrlEncode(user.Subject)},
+                {"username", HttpUtility.UrlEncode(user.Username)},
+                {"name", HttpUtility.UrlEncode(user.GetClaim("name"))}
             };
 
-            if (user.CompanyUser)
-            {
-                payloadDictionary.Add("moderator", "true");
-            }
-            if (user.Administrator)
-            {
-                payloadDictionary.Add("admin", "true");
-            }
+            var returnsso = CreatessoQueryString(ssoDictionary);
 
-            var returnPayload = CreatePayloadQueryString(payloadDictionary);
+            var returnssoEncoded = Convert.ToBase64String(Encoding.UTF8.GetBytes(returnsso));
+            var returnSig = Hash(DISCOURSE_SECRET, returnssoEncoded);
 
-            var returnPayloadEncoded = Convert.ToBase64String(Encoding.UTF8.GetBytes(returnPayload));
-            var returnSig = Hash(AppSettings.DiscourseSecret(), returnPayloadEncoded);
-
-            return $"{returnUrl}?sso={returnPayloadEncoded}&sig={returnSig}";
+            return $"{returnUrl}?sso={returnssoEncoded}&sig={returnSig}";
         }
 
-        private static string Hash(string key, string payload)
+        private static string Hash(string secret, string sso)
         {
-            var hasher = new HMACSHA256(Encoding.UTF8.GetBytes(key));
-            var hash = hasher.ComputeHash(Encoding.UTF8.GetBytes(payload));
+            var hasher = new HMACSHA256(Encoding.UTF8.GetBytes(secret));
+            var hash = hasher.ComputeHash(Encoding.UTF8.GetBytes(sso));
             return BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
         }
 
-        private static NameValueCollection ParsePayload(string encodedPayload)
+        private static NameValueCollection Parsesso(string encodedsso)
         {
-            var queryString = Encoding.UTF8.GetString(Convert.FromBase64String(encodedPayload));
+            var queryString = Encoding.UTF8.GetString(Convert.FromBase64String(encodedsso));
             return HttpUtility.ParseQueryString(queryString);
         }
 
-        private static string CreatePayloadQueryString(Dictionary<string, string> dictionary)
+        private static string CreatessoQueryString(Dictionary<string, string> dictionary)
         {
 
             return string.Join("&", dictionary.Select(x => $"{x.Key}={x.Value}"));

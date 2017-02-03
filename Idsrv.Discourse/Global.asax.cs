@@ -1,4 +1,5 @@
 ﻿using System.Web.Mvc;
+using System.Web.Optimization;
 using System.Web.Routing;
 
 namespace Idsrv.Discourse
@@ -8,7 +9,9 @@ namespace Idsrv.Discourse
         protected void Application_Start()
         {
             AreaRegistration.RegisterAllAreas();
+            FilterConfig.RegisterGlobalFilters(GlobalFilters.Filters);
             RouteConfig.RegisterRoutes(RouteTable.Routes);
+            BundleConfig.RegisterBundles(BundleTable.Bundles);
         }
     }
 }

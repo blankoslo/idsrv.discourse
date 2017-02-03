@@ -29,26 +29,27 @@ namespace Idsrv.Discourse.Controllers
                 throw new ArgumentException("Missing input parameters");
             }
 
-            if (!Validatesso(sso, sig))
+            if (!IsValid(sso, sig))
             {
                 throw new SecurityException("sso sig not valid");
             }
 
             var idsrvClaimsIdentity = await Request.GetOwinContext().Environment.GetIdentityServerFullLoginAsync();
 
-            var isNotAuthenticated = idsrvClaimsIdentity == null || !idsrvClaimsIdentity.Claims.Any();
-            if (isNotAuthenticated)
+            var isAuthenticated = idsrvClaimsIdentity != null;
+            if (isAuthenticated)
             {
-                // Not authenticated, returning login page
-                TempData["sso"] = sso;
-                return View();
+                // User authenticated, getting user, generating sso and redirecting back to Discourse
+
+                var user = Users.GetUserBySub(idsrvClaimsIdentity.FindFirst(c => c.Type == "sub").Value);
+
+                var redirectUrl = CreateDiscourseRedirectUrl(user, sso);
+                return new RedirectResult(redirectUrl);
             }
 
-            // User authenticated, getting user, generating sso and redirecting back to Discourse
-            var user = Users.GetUserBySub(idsrvClaimsIdentity.FindFirst(c => c.Type == "sub").Value);
-
-            var redirectUrl = CreateDiscourseRedirectUrl(user, sso);
-            return new RedirectResult(redirectUrl);
+            // Not authenticated, returning login page
+            TempData["sso"] = sso;
+            return View();
         }
 
         [Route("core/discourse/login")]
@@ -102,9 +103,9 @@ namespace Idsrv.Discourse.Controllers
             return RedirectToAction("Index", new { sso = mockRequest.Sso, sig = mockRequest.Sig});
         }
 
-        private static bool Validatesso(string encodedsso, string sig)
+        private static bool IsValid(string encodedPayload, string signature)
         {
-            return Hash(DISCOURSE_SECRET, encodedsso) == sig;
+            return Hash(DISCOURSE_SECRET, encodedPayload) == signature;
         }
 
         private static string CreateDiscourseRedirectUrl(InMemoryUser user, string originalEncodedsso)
@@ -130,10 +131,10 @@ namespace Idsrv.Discourse.Controllers
             return $"{returnUrl}?sso={returnssoEncoded}&sig={returnSig}";
         }
 
-        private static string Hash(string secret, string sso)
+        private static string Hash(string secret, string encodedPayload)
         {
             var hasher = new HMACSHA256(Encoding.UTF8.GetBytes(secret));
-            var hash = hasher.ComputeHash(Encoding.UTF8.GetBytes(sso));
+            var hash = hasher.ComputeHash(Encoding.UTF8.GetBytes(encodedPayload));
             return BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
         }
 

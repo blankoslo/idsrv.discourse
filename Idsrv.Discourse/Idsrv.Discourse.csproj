@@ -101,7 +101,9 @@
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Config\Clients.cs" />
     <Compile Include="Startup.cs" />
+    <Compile Include="Config\Users.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Views\web.config" />

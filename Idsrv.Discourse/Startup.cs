@@ -14,7 +14,7 @@ namespace Idsrv.Discourse
         {
             var options = new IdentityServerOptions
             {
-                Factory = new IdentityServerServiceFactory().UseInMemoryClients(Clients.Get()).UseInMemoryUsers(Users.Get())
+                Factory = new IdentityServerServiceFactory().UseInMemoryClients(Clients.Get()).UseInMemoryUsers(Users.Get()).UseInMemoryScopes(Scopes.Get())
             };
 
             app.Map("/core", a => a.UseIdentityServer(options));

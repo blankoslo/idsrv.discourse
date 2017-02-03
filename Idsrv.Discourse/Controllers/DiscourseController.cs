@@ -5,6 +5,7 @@ using System.Linq;
 using System.Security;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading.Tasks;
 using System.Web;
 using System.Web.Mvc;
 using IdentityServer3.Core.Extensions;
@@ -21,7 +22,7 @@ namespace Idsrv.Discourse.Controllers
         // Redirected from Discourse
         [Route("core/discourse")]
         [HttpGet]
-        public ActionResult Index(string sso, string sig)
+        public async Task<ActionResult> Index(string sso, string sig)
         {
             if (string.IsNullOrEmpty(sso) || string.IsNullOrEmpty(sig))
             {
@@ -33,7 +34,7 @@ namespace Idsrv.Discourse.Controllers
                 throw new SecurityException("sso sig not valid");
             }
 
-            var idsrvClaimsIdentity = Request.GetOwinContext().Environment.GetIdentityServerFullLoginAsync().GetAwaiter().GetResult();
+            var idsrvClaimsIdentity = await Request.GetOwinContext().Environment.GetIdentityServerFullLoginAsync();
 
             var isNotAuthenticated = idsrvClaimsIdentity == null || !idsrvClaimsIdentity.Claims.Any();
             if (isNotAuthenticated)

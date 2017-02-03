@@ -113,6 +113,7 @@ namespace Idsrv.Discourse.Controllers
                 {"email", HttpUtility.UrlEncode(user.GetClaim("email"))},
                 {"external_id", HttpUtility.UrlEncode(user.Subject)},
                 {"username", HttpUtility.UrlEncode(user.Username)},
+                {"admin", HttpUtility.UrlEncode("true")},
                 {"name", HttpUtility.UrlEncode(user.GetClaim("name"))}
             };
 

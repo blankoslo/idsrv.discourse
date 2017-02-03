@@ -87,9 +87,10 @@ namespace Idsrv.Discourse.Controllers
 
         [Route("core/discourse/logout")]
         [HttpGet]
-        public void Logout()
+        public ActionResult Logout()
         {
             Request.GetOwinContext().Authentication.SignOut();
+            return Redirect("/");
         }
 
         [Route("core/discourse/fakeincomingrequest")]

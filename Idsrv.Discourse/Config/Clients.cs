@@ -7,14 +7,7 @@ namespace Idsrv.Discourse.Config
     {
         public static IEnumerable<Client> Get()
         {
-            return new[]
-            {
-                new Client
-                {
-                    ClientId = "Client1",
-                    RedirectUris = new List<string> {"http://localhost:1982/"}
-                }
-            };
+            return new Client[0];
         }
     }
 }

@@ -1,2 +1,5 @@
-# idsrv.discourse
-Sample of how to integrate SSO with discourse
+# IdentityServer integration w/ Discourse
+
+## Why?
+
+

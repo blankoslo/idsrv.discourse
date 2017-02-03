@@ -15,7 +15,8 @@ namespace Idsrv.Discourse
             var options = new IdentityServerOptions
             {
                 Factory = new IdentityServerServiceFactory().UseInMemoryClients(Clients.Get()).UseInMemoryUsers(Users.Get()).UseInMemoryScopes(Scopes.Get()),
-                RequireSsl = false
+                RequireSsl = false,
+                AuthenticationOptions = new AuthenticationOptions { EnablePostSignOutAutoRedirect = true, EnableSignOutPrompt = false}
             };
 
             app.Map("/core", a => a.UseIdentityServer(options));

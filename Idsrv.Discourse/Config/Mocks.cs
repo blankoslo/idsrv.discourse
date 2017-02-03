@@ -9,14 +9,14 @@ namespace Idsrv.Discourse.Config
 {
     public class Mocks
     {
-        private const string DISCOURSE_SECRET = "asd";
+        private const string DISCOURSE_SECRET = "my-fancy-secret";
 
         public static IncomingDiscourseRequestMock GenerateFakeDiscoursceIncomingRequest()
         {
             var ssoDictionary = new Dictionary<string, string>
             {
-                {"nonce", "something"},
-                {"return_sso_url", HttpUtility.UrlEncode("http://discourse_site/session/sso_login")},
+                {"nonce", "this-should-be-generated-by-your-discourse-instance"},
+                {"return_sso_url", HttpUtility.UrlEncode("http://discourse-test.westeurope.cloudapp.azure.com/session/sso_login")},
             };
 
             var returnsso = CreatessoQueryString(ssoDictionary);

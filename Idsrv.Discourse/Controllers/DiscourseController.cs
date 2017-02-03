@@ -16,7 +16,7 @@ namespace Idsrv.Discourse.Controllers
 {
     public class DiscourseController : Controller
     {
-        const string DISCOURSE_SECRET = "asd";
+        const string DISCOURSE_SECRET = "my-fancy-secret";
         
         // Redirected from Discourse
         [Route("core/discourse")]

@@ -96,11 +96,12 @@ namespace Idsrv.Discourse.Controllers
             return Hash(DISCOURSE_SECRET, encodedPayload) == signature;
         }
 
-        private static string CreateDiscourseRedirectUrl(InMemoryUser user, string originalEncodedsso)
+        private string CreateDiscourseRedirectUrl(InMemoryUser user, string originalEncodedsso)
         {
             var urlParameters = Parsesso(originalEncodedsso);
             var nonce = urlParameters.Get("nonce");
             var returnUrl = urlParameters.Get("return_sso_url");
+            ValidateKnownurl(returnUrl);
             
             var ssoDictionary = new Dictionary<string, string>
             {
@@ -117,6 +118,17 @@ namespace Idsrv.Discourse.Controllers
             var returnSig = Hash(DISCOURSE_SECRET, returnssoEncoded);
 
             return $"{returnUrl}?sso={returnssoEncoded}&sig={returnSig}";
+        }
+
+        private List<string> ValidRedirectUris = new List<string>
+        {
+            "http://discourse-test.westeurope.cloudapp.azure.com/session/sso_login"
+        };
+
+        private void ValidateKnownurl(string returnUrl)
+        {
+            if (!ValidRedirectUris.Any(u => u.Equals(returnUrl)))
+                throw new ApplicationException("Bad redirect uri");
         }
 
         private static string Hash(string secret, string encodedPayload)
